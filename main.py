@@ -11,13 +11,16 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['FILES'] = 'static/files'
 db = SQLAlchemy(app)
 
+
 ##CREATE TABLE IN DB
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(100), unique=True)
     password = db.Column(db.String(100))
     name = db.Column(db.String(1000))
-#Line below only required once, when creating DB. 
+
+
+# Line below only required once, when creating DB. 
 # db.create_all()
 
 
@@ -63,7 +66,6 @@ def download():
         return send_from_directory(app.config['FILES'], path="cheat_sheet.pdf")
     except FileNotFoundError:
         return "File not found", 404
-
 
 
 if __name__ == "__main__":
