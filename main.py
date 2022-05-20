@@ -10,7 +10,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['FILES'] = 'static/files'
 db = SQLAlchemy(app)
-
+login_manager = LoginManager()
+login_manager.init_app(app)
 
 ##CREATE TABLE IN DB
 class User(UserMixin, db.Model):
@@ -23,6 +24,10 @@ class User(UserMixin, db.Model):
 # Line below only required once, when creating DB. 
 # db.create_all()
 
+@login_manager.user_loader
+def load_user(user_id):
+    return User.get(user_id)
+
 
 @app.route('/')
 def home():
@@ -33,9 +38,10 @@ def home():
 def register():
     if request.method == "POST":
         entry = request.form
+
         new_entry = User(
             email=entry["email"],
-            password=entry["password"],
+            password=generate_password_hash(entry["password"], method='pbkdf2:sha256', salt_length=8),
             name=entry["name"]
         )
         db.session.add(new_entry)
@@ -45,8 +51,21 @@ def register():
     return render_template("register.html")
 
 
-@app.route('/login')
+@app.route('/login', methods=["GET", "POST"])
 def login():
+    if request.method == "POST":
+        form = request.form
+
+        user = User(
+            email=form["email"],
+            password=form["password"],
+        )
+        user_in_database = db.session.query(User).filter(User.email == user.email).first()
+
+        if check_password_hash(user_in_database.password, user.password):
+            login_user(user)
+            flash("logged in successfully")
+            return "logged in"
     return render_template("login.html")
 
 
